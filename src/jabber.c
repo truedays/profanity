@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <strophe.h>
+#include <couplet.h>
 
 #include "common.h"
 #include "jabber.h"
@@ -124,8 +124,10 @@ jabber_process_events(void)
 {
     if (jabber_conn.conn_status == JABBER_CONNECTED 
             || jabber_conn.conn_status == JABBER_CONNECTING
-            || jabber_conn.conn_status == JABBER_DISCONNECTING)
+            || jabber_conn.conn_status == JABBER_DISCONNECTING) {
+        xmpp_run_send_queue_once(jabber_conn.ctx);
         xmpp_run_once(jabber_conn.ctx, 10);
+    }
 }
 
 void
