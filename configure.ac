@@ -12,8 +12,6 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_PROG_CC
 
 # Checks for libraries.
-AC_CHECK_LIB([notify], [main], [], 
-    [AC_MSG_NOTICE([libnotify not found, desktop notifications no supported])])
 AC_CHECK_LIB([headunit], [main], [], 
     [AC_MSG_NOTICE([headunit not found, will not be able to run tests])])
 
