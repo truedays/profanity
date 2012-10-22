@@ -191,7 +191,7 @@ prof_handle_roster(GSList *roster)
         jabber_roster_entry *entry = roster->data;
 
         // if contact not in contact list add them as offline
-        if (find_contact(entry->jid) == NULL) {
+        if (contact_list_find_contact(entry->jid) == NULL) {
             contact_list_add(entry->jid, "offline", NULL);
         }
 
@@ -267,7 +267,7 @@ _process_input(char *inp)
     }
 
     inp_clear();
-    reset_search_attempts();
+    contact_list_reset_search_attempts();
     win_page_off();
 
     return result;
@@ -308,8 +308,10 @@ _shutdown_init(void)
 static void
 _shutdown(void)
 {
+    contact_list_clear();
     gui_close();
     chat_log_close();
     prefs_close();
+    cmd_close();
     log_close();
 }

@@ -54,9 +54,8 @@ struct cmd_t {
 static struct cmd_t * _cmd_get_command(const char * const command);
 static void _update_presence(const jabber_presence_t presence,
     const char * const show, const char * const inp);
-static gboolean
-_cmd_set_boolean_preference(const char * const inp, struct cmd_help_t help,
-    const char * const cmd_str, const char * const display,
+static gboolean _cmd_set_boolean_preference(const char * const inp,
+    struct cmd_help_t help, const char * const cmd_str, const char * const display,
     void (*set_func)(gboolean));
 
 // command prototypes
@@ -353,6 +352,7 @@ static struct cmd_t status_commands[] =
 };
 
 static PAutocomplete commands_ac;
+static PAutocomplete help_ac;
 
 /*
  * Initialise command autocompleter and history
@@ -362,24 +362,35 @@ cmd_init(void)
 {
     log_info("Initialising commands");
     commands_ac = p_autocomplete_new();
+    help_ac = p_autocomplete_new();
 
     unsigned int i;
     for (i = 0; i < ARRAY_SIZE(main_commands); i++) {
         struct cmd_t *pcmd = main_commands+i;
-        p_autocomplete_add(commands_ac, (gchar *)pcmd->cmd);
+        p_autocomplete_add(commands_ac, (gchar *)strdup(pcmd->cmd));
+        p_autocomplete_add(help_ac, (gchar *)strdup(pcmd->cmd+1));
     }
 
     for (i = 0; i < ARRAY_SIZE(setting_commands); i++) {
         struct cmd_t *pcmd = setting_commands+i;
-        p_autocomplete_add(commands_ac, (gchar *)pcmd->cmd);
+        p_autocomplete_add(commands_ac, (gchar *)strdup(pcmd->cmd));
+        p_autocomplete_add(help_ac, (gchar *)strdup(pcmd->cmd+1));
     }
 
     for (i = 0; i < ARRAY_SIZE(status_commands); i++) {
         struct cmd_t *pcmd = status_commands+i;
-        p_autocomplete_add(commands_ac, (gchar *)pcmd->cmd);
+        p_autocomplete_add(commands_ac, (gchar *)strdup(pcmd->cmd));
+        p_autocomplete_add(help_ac, (gchar *)strdup(pcmd->cmd+1));
     }
 
     history_init();
+}
+
+void
+cmd_close(void)
+{
+    p_autocomplete_clear(commands_ac);
+    p_autocomplete_clear(help_ac);
 }
 
 // Command autocompletion functions
@@ -397,6 +408,17 @@ cmd_reset_completer(void)
 }
 
 // Command help
+char *
+cmd_help_complete(char *inp)
+{
+    return p_autocomplete_complete(help_ac, inp);
+}
+
+void
+cmd_help_reset_completer(void)
+{
+    p_autocomplete_reset(help_ac);
+}
 
 GSList *
 cmd_get_basic_help(void)
