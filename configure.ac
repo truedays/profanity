@@ -11,45 +11,52 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 # Checks for programs.
 AC_PROG_CC
 
+AC_ARG_WITH([strophe],
+    [AS_HELP_STRING([--with-strophe], [use libstrophe instead of libcouplet])])
+
 # Checks for libraries.
-AC_CHECK_LIB([ncurses], [main], [], 
-    [AC_MSG_ERROR([ncurses is required for profanity])])
-AC_CHECK_LIB([resolv], [main], [], 
-    [AC_MSG_ERROR([libresolv is required for profanity])])
-AC_CHECK_LIB([ssl], [main], [], 
-    [AC_MSG_ERROR([openssl is required for profanity])])
-AC_CHECK_LIB([expat], [main], [], 
-    [AC_MSG_ERROR([expat is required for profanity])])
-AC_CHECK_LIB([xml2], [main], [], 
-    [AC_MSG_ERROR([libxml2 is required for profanity])])
-AC_CHECK_LIB([strophe], [main], [], 
-    [AC_MSG_ERROR([libstrophe is required for profanity])])
-AC_CHECK_LIB([glib-2.0], [main], [], 
-    [AC_MSG_ERROR([glib-2.0 is required for profanity])])
-AC_CHECK_LIB([curl], [main], [], 
-    [AC_MSG_ERROR([libcurl is required for profanity])])
-AC_CHECK_LIB([notify], [main], [], 
-    [AC_MSG_NOTICE([libnotify not found, desktop notifications no supported])])
 AC_CHECK_LIB([headunit], [main], [], 
     [AC_MSG_NOTICE([headunit not found, will not be able to run tests])])
+AC_CHECK_LIB([notify], [main], [], 
+    [AC_MSG_NOTICE([libnotify module not found])])
+
+PKG_CHECK_MODULES([libnotify], [libnotify], [], 
+    [AC_MSG_NOTICE([libnotify module not found])])
+PKG_CHECK_MODULES([openssl], [openssl], [],
+    [AC_MSG_ERROR([openssl is required for profanity])])
+PKG_CHECK_MODULES([libcurl], [libcurl], [],
+    [AC_MSG_ERROR([libcurl is required for profanity])])
+PKG_CHECK_MODULES([ncurses], [ncurses], [],
+    [AC_MSG_ERROR([ncurses is required for profanity])])
+PKG_CHECK_MODULES([glib], [glib-2.0], [],
+    [AC_MSG_ERROR([glib-2.0 is required for profanity])])
+
+if test "x$with_strophe" = xyes; then
+    AC_CHECK_LIB([expat], [main], [],
+        [AC_MSG_ERROR([expat is required for profanity])])
+    AC_CHECK_LIB([xml2], [main], [],
+        [AC_MSG_ERROR([libxml2 is required for profanity])])
+    AC_CHECK_LIB([strophe], [main], [],
+        [AC_MSG_ERROR([libstrophe is required for profanity])])
+else
+    PKG_CHECK_MODULES([libcouplet], [libcouplet >= 0.8], [],
+        [AC_MSG_ERROR([libcouplet is required for profanity])])
+    AC_CHECK_LIB([couplet], [main], [],
+        [AC_MSG_ERROR([libcouplet is required for profanity])])
+    AM_CFLAGS="$AM_CFLAGS $libcouplet_CFLAGS"
+    LIBS="$LIBS $libcouplet_LIBS"
+fi
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h])
 AC_CHECK_HEADERS([ncurses.h], [], [])
 AC_CHECK_HEADERS([ncurses/ncurses.h], [], [])
 
-PKG_CHECK_MODULES([DEPS], [openssl glib-2.0 libcurl])
-PKG_CHECK_MODULES([NOTIFY], [libnotify], [], 
-    [AC_MSG_NOTICE([libnotify module not found])])
-
-AM_CFLAGS="-Wall "
-AM_CFLAGS="$AM_CFLAGS -lstrophe -lxml2 -lexpat -lncurses -lcurl -lresolv "
-AM_CFLAGS="$AM_CFLAGS $DEPS_LIBS $NOTIFY_LIBS"
-
-AM_CPPFLAGS="$DEPS_CFLAGS $NOTIFY_CFLAGS"
+AM_CFLAGS="$AM_CFLAGS $libnotify_CFLAGS $libcurl_CFLAGS $ncurses_CFLAGS $glib_CFLAGS"
+AM_CFLAGS="$AM_CFLAGS -Wall"
+LIBS="$LIBS $libnotify_LIBS $openssl_LIBS $libcurl_LIBS $ncurses_LIBS $glib_LIBS"
 
 AC_SUBST(AM_CFLAGS)
-AC_SUBST(AM_CPPFLAGS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 

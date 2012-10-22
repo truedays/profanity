@@ -23,7 +23,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <strophe.h>
+#ifdef HAVE_LIBSTROPHE
+# include <strophe.h>
+#else
+# include <couplet.h>
+#endif
 
 #include "common.h"
 #include "jabber.h"
@@ -124,8 +128,13 @@ jabber_process_events(void)
 {
     if (jabber_conn.conn_status == JABBER_CONNECTED
             || jabber_conn.conn_status == JABBER_CONNECTING
-            || jabber_conn.conn_status == JABBER_DISCONNECTING)
+            || jabber_conn.conn_status == JABBER_DISCONNECTING) {
+#ifndef HAVE_LIBSTROPHE
+        // this function is specific for libcouplet
+        xmpp_run_send_queue_once(jabber_conn.ctx);
+#endif /* HAVE_LIBSTROPHE */
         xmpp_run_once(jabber_conn.ctx, 10);
+    }
 }
 
 void
