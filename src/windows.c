@@ -575,9 +575,33 @@ void
 cons_help(void)
 {
     cons_show("");
+    cons_show("Choose an area you need help with:");
+    cons_show("");
+    cons_show("/help basic      - Basic commands, for connecting, chatting etc.");
+    cons_show("/help status     - How to change your status.");
+    cons_show("/help settings   - Commands for configuring Profanity.");
+    cons_show("/help navigation - How to navigate around Profanity.");
+    cons_show("");
+
+    if (_curr_prof_win == 0)
+        dirty = TRUE;
+}
+
+void
+cons_basic_help(void)
+{
+    cons_show("");
     cons_show("Basic Commands:");
     _cons_show_basic_help();
 
+    if (_curr_prof_win == 0)
+        dirty = TRUE;
+}
+
+void
+cons_settings_help(void)
+{
+    cons_show("");
     cons_show("Settings:");
     cons_show("");
 
@@ -588,6 +612,15 @@ cons_help(void)
         settings_helpers = g_slist_next(settings_helpers);
     }
 
+    cons_show("");
+
+    if (_curr_prof_win == 0)
+        dirty = TRUE;
+}
+
+void
+cons_status_help(void)
+{
     cons_show("");
     cons_show("Status changes:");
     cons_show("");
@@ -600,12 +633,22 @@ cons_help(void)
     }
 
     cons_show("");
+
+    if (_curr_prof_win == 0)
+        dirty = TRUE;
+}
+
+void
+cons_navigation_help(void)
+{
+    cons_show("");
     cons_show("Navigation:");
     cons_show("");
     cons_show("F1                       : This console window.");
     cons_show("F2-F10                   : Chat windows.");
     cons_show("UP, DOWN                 : Navigate input history.");
     cons_show("LEFT, RIGHT, HOME, END   : Edit current input.");
+    cons_show("ESC                      : Clear current input.");
     cons_show("TAB                      : Autocomplete command/recipient/login");
     cons_show("PAGE UP, PAGE DOWN       : Page the main window.");
     cons_show("");
@@ -730,8 +773,7 @@ win_page_off(void)
 static void
 _create_windows(void)
 {
-    int rows, cols;
-    getmaxyx(stdscr, rows, cols);
+    int cols = getmaxx(stdscr);
     max_cols = cols;
 
     // create the console window in 0
@@ -746,6 +788,31 @@ _create_windows(void)
     scrollok(cons.win, TRUE);
 
     _wins[0] = cons;
+
+    cons_about();
+
+    // create the chat windows
+    int i;
+    for (i = 1; i < NUM_WINS; i++) {
+        struct prof_win chat;
+        strcpy(chat.from, "");
+        chat.win = newpad(PAD_SIZE, cols);
+        wbkgd(chat.win, COLOUR_TEXT);
+        chat.y_pos = 0;
+        chat.paged = 0;
+        chat.unread = 0;
+        chat.history_shown = 0;
+        scrollok(chat.win, TRUE);
+        _wins[i] = chat;
+    }
+}
+
+void
+cons_about(void)
+{
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);
+
     _cons_win = _wins[0].win;
 
     if (prefs_get_showsplash()) {
@@ -775,21 +842,6 @@ _create_windows(void)
     prefresh(_cons_win, 0, 0, 1, 0, rows-3, cols-1);
 
     dirty = TRUE;
-
-    // create the chat windows
-    int i;
-    for (i = 1; i < NUM_WINS; i++) {
-        struct prof_win chat;
-        strcpy(chat.from, "");
-        chat.win = newpad(PAD_SIZE, cols);
-        wbkgd(chat.win, COLOUR_TEXT);
-        chat.y_pos = 0;
-        chat.paged = 0;
-        chat.unread = 0;
-        chat.history_shown = 0;
-        scrollok(chat.win, TRUE);
-        _wins[i] = chat;
-    }
 }
 
 static void

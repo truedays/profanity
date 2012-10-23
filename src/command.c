@@ -61,6 +61,7 @@ static gboolean _cmd_set_boolean_preference(const char * const inp,
 // command prototypes
 static gboolean _cmd_quit(const char * const inp, struct cmd_help_t help);
 static gboolean _cmd_help(const char * const inp, struct cmd_help_t help);
+static gboolean _cmd_about(const char * const inp, struct cmd_help_t help);
 static gboolean _cmd_prefs(const char * const inp, struct cmd_help_t help);
 static gboolean _cmd_who(const char * const inp, struct cmd_help_t help);
 static gboolean _cmd_connect(const char * const inp, struct cmd_help_t help);
@@ -91,14 +92,24 @@ static struct cmd_t main_commands[] =
 {
     { "/help",
         _cmd_help,
-        { "/help [command]", "Show help summary, or help on a specific command",
-        { "/help [command]",
-          "---------------",
-          "List all commands with short help on what they do.",
+        { "/help [area|command]", "Show help summary, or help on a specific area or command",
+        { "/help [area|command]",
+          "--------------------",
+          "Show help options.",
+          "Specify an area (basic, status, settings, navigation) for more help on that area.",
           "Specify the command if you want more detailed help on a specific command.",
           "",
           "Example : /help connect",
+          "Example : /help settings",
           NULL } } },
+
+    { "/about",
+        _cmd_about,
+        { "/about", "About Profanity",
+        { "/about",
+          "------",
+          "Show versioning and license information.",
+          NULL  } } },
 
     { "/connect",
         _cmd_connect,
@@ -363,6 +374,10 @@ cmd_init(void)
     log_info("Initialising commands");
     commands_ac = p_autocomplete_new();
     help_ac = p_autocomplete_new();
+    p_autocomplete_add(help_ac, strdup("basic"));
+    p_autocomplete_add(help_ac, strdup("status"));
+    p_autocomplete_add(help_ac, strdup("settings"));
+    p_autocomplete_add(help_ac, strdup("navigation"));
 
     unsigned int i;
     for (i = 0; i < ARRAY_SIZE(main_commands); i++) {
@@ -551,6 +566,14 @@ _cmd_help(const char * const inp, struct cmd_help_t help)
 {
     if (strcmp(inp, "/help") == 0) {
         cons_help();
+    } else if (strcmp(inp, "/help basic") == 0) {
+        cons_basic_help();
+    } else if (strcmp(inp, "/help status") == 0) {
+        cons_status_help();
+    } else if (strcmp(inp, "/help settings") == 0) {
+        cons_settings_help();
+    } else if (strcmp(inp, "/help navigation") == 0) {
+        cons_navigation_help();
     } else {
         char *cmd = strndup(inp+6, strlen(inp)-6);
         char cmd_with_slash[1 + strlen(cmd) + 1];
@@ -577,6 +600,13 @@ _cmd_help(const char * const inp, struct cmd_help_t help)
         cons_show("");
     }
 
+    return TRUE;
+}
+
+static gboolean
+_cmd_about(const char * const inp, struct cmd_help_t help)
+{
+    cons_about();
     return TRUE;
 }
 
