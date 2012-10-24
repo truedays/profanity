@@ -42,6 +42,7 @@
 #include "contact_list.h"
 #include "log.h"
 #include "preferences.h"
+#include "release.h"
 #include "ui.h"
 
 #define CONS_WIN_TITLE "_cons"
@@ -86,6 +87,7 @@ static void _win_resize_all(void);
 static gint _win_get_unread(void);
 static void _win_show_history(WINDOW *win, int win_index,
     const char * const contact);
+static gboolean _new_release(char *found_version);
 
 #ifdef HAVE_LIBNOTIFY
 static void _win_notify(const char * const message, int timeout,
@@ -541,6 +543,11 @@ cons_prefs(void)
     else
         cons_show("Chat history            : OFF");
 
+    if (prefs_get_vercheck())
+        cons_show("Version checking        : ON");
+    else
+        cons_show("Version checking        : OFF");
+
     gint remind_period = prefs_get_remind();
     if (remind_period == 0) {
         cons_show("Message reminder period : OFF");
@@ -819,7 +826,12 @@ cons_about(void)
         _cons_splash_logo();
     } else {
         _win_show_time(_cons_win);
-        wprintw(_cons_win, "Welcome to Profanity, version %s\n", PACKAGE_VERSION);
+
+        if (strcmp(PACKAGE_STATUS, "development") == 0) {
+            wprintw(_cons_win, "Welcome to Profanity, version %sdev\n", PACKAGE_VERSION);
+        } else {
+            wprintw(_cons_win, "Welcome to Profanity, version %s\n", PACKAGE_VERSION);
+        }
     }
 
     _win_show_time(_cons_win);
@@ -839,9 +851,70 @@ cons_about(void)
     _win_show_time(_cons_win);
     wprintw(_cons_win, "\n");
 
+    if (prefs_get_vercheck()) {
+        cons_check_version(FALSE);
+    }
+
     prefresh(_cons_win, 0, 0, 1, 0, rows-3, cols-1);
 
     dirty = TRUE;
+}
+
+void
+cons_check_version(gboolean not_available_msg)
+{
+    char *latest_release = release_get_latest();
+
+    if (latest_release != NULL) {
+        gboolean relase_valid = g_regex_match_simple("^\\d+\\.\\d+\\.\\d+$", latest_release, 0, 0);
+
+        if (relase_valid) {
+            if (_new_release(latest_release)) {
+                _win_show_time(_cons_win);
+                wattron(_cons_win, COLOUR_ONLINE);
+                wprintw(_cons_win, "A new version of Profanity is available: %s", latest_release);
+                wattroff(_cons_win, COLOUR_ONLINE);
+                _win_show_time(_cons_win);
+                wattron(_cons_win, COLOUR_ONLINE);
+                wprintw(_cons_win, "Check http://www.boothj5.com/profanity.shtml for details.\n");
+                wattroff(_cons_win, COLOUR_ONLINE);
+                free(latest_release);
+                _win_show_time(_cons_win);
+                wprintw(_cons_win, "\n");
+            } else {
+                if (not_available_msg) {
+                    cons_show("No new version available.");
+                    cons_show("");
+                }
+            }
+        }
+    }
+}
+
+static gboolean
+_new_release(char *found_version)
+{
+    int curr_maj, curr_min, curr_patch, found_maj, found_min, found_patch;
+
+    int parse_curr = sscanf(PACKAGE_VERSION, "%d.%d.%d", &curr_maj, &curr_min,
+        &curr_patch);
+    int parse_found = sscanf(found_version, "%d.%d.%d", &found_maj, &found_min,
+        &found_patch);
+
+    if (parse_found == 3 && parse_curr == 3) {
+        if (found_maj > curr_maj) {
+            return TRUE;
+        } else if (found_maj == curr_maj && found_min > curr_min) {
+            return TRUE;
+        } else if (found_maj == curr_maj && found_min == curr_min
+                                        && found_patch > curr_patch) {
+            return TRUE;
+        } else {
+            return FALSE;
+        }
+    } else {
+        return FALSE;
+    }
 }
 
 static void
@@ -849,7 +922,6 @@ _cons_splash_logo(void)
 {
     _win_show_time(_cons_win);
     wprintw(_cons_win, "Welcome to\n");
-
 
     _win_show_time(_cons_win);
     wattron(_cons_win, COLOUR_OFFLINE);
@@ -889,7 +961,11 @@ _cons_splash_logo(void)
     _win_show_time(_cons_win);
     wprintw(_cons_win, "\n");
     _win_show_time(_cons_win);
-    wprintw(_cons_win, "Version %s\n", PACKAGE_VERSION);
+    if (strcmp(PACKAGE_STATUS, "dev") == 0) {
+        wprintw(_cons_win, "Version %sdev\n", PACKAGE_VERSION);
+    } else {
+        wprintw(_cons_win, "Version %s\n", PACKAGE_VERSION);
+    }
 }
 
 static int
