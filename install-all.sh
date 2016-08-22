@@ -175,7 +175,12 @@ if [ "${OS}" = "Linux" ]; then
     elif [ -f /etc/centos-release ]; then
         DIST=centos
     elif [ -f /etc/os-release ]; then
-        DIST=opensuse
+        if /bin/grep -q -- alpine /etc/os-release; then
+            DIST=alpine
+        else
+            DIST=opensuse
+        fi
+    elif [ -f /etc/os-release ]; then  && echo yep || echo nope; fi
     fi
 else
     echo $OS | grep -i cygwin
